@@ -22,7 +22,6 @@ RUN apk update
 # Update and install packages
 RUN apk --no-cache add bind
 RUN apk --no-cache add python3
-RUN apk --no-cache add bind-utils
 
 ADD files/named.conf ${BIND_CONF} 
 ADD files/replace.py /usr/local/bin/replace_conf
