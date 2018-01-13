@@ -17,7 +17,7 @@ ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 # Update and install packages
 RUN apk --no-cache add bind
 RUN apk --no-cache add python3
-RUN apk --no-cache bind-utils
+RUN apk --no-cache add bind-utils
 
 ADD files/bind.conf ${BIND_CONF} 
 ADD files/replace.py /usr/local/bin/replace_conf
