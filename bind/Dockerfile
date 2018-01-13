@@ -25,7 +25,6 @@ RUN apk --no-cache add python3
 
 ADD files/named.conf ${BIND_CONF} 
 ADD files/replace.py /usr/local/bin/replace_conf
-ADD files/hosts /etc/hosts
 RUN chmod +rx /usr/local/bin/replace_conf
 RUN /usr/local/bin/replace_conf ${BIND_CONF} BIND
 RUN rm -f /usr/local/bin/replace_conf
