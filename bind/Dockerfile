@@ -19,7 +19,7 @@ RUN apk --no-cache add bind
 RUN apk --no-cache add python3
 RUN apk --no-cache add bind-utils
 
-ADD files/bind.conf ${BIND_CONF} 
+ADD files/named.conf ${BIND_CONF} 
 ADD files/replace.py /usr/local/bin/replace_conf
 ADD files/hosts /etc/hosts
 RUN chmod +rx /usr/local/bin/replace_conf
@@ -28,8 +28,8 @@ RUN rm -f /usr/local/bin/replace_conf
 
 # Mount volumes to keep store and logs away from the thin layer overlay
 # This is important for performance and memory footprint
-VOLUME /var/log/
-VOLUME /var/spool/bind/
+VOLUME /var/log/named/
+VOLUME /var/named/
 
 # Remove this line if you want to be able to rerun replace_conf
 # to enable runtime environment variables being read into the application
