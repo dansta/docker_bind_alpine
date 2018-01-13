@@ -2,9 +2,6 @@
 
 # Run as root in the same directory as the Dockerfile
 
-# Install password gen
-apt-get install pwgen
-
 # Create image
 docker build -t bind:0.0.100 .
 
