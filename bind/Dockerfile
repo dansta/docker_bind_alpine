@@ -16,6 +16,9 @@ ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 # Healthcheck is not working, disabling for now
 #HEALTHCHECK --interval=10s --timeout=3s CMD dig @localhost www.kvantmekanik.se || exit 1
 
+# Update cache
+RUN apk update
+
 # Update and install packages
 RUN apk --no-cache add bind
 RUN apk --no-cache add python3
