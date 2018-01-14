@@ -2,6 +2,12 @@ FROM gliderlabs/alpine:latest
 
 LABEL maintainer=dansta
 
+ARG PERMANENT_APPLICATIONS
+ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind}
+ARG REMOVABLE_APPLICATIONS
+ENV REMOVABLE_APPLICATIONS ${REMOVABLE_APPLICATIONS:-python3 \
+                                             wget \
+                                             ca-certificates}
 ARG BIND_CONF
 ENV BIND_CONF ${BIND_CONF:-/etc/named/named.conf}
 ARG BIND_PORT
@@ -23,8 +29,8 @@ ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 #HEALTHCHECK --interval=10s --timeout=3s CMD dig @localhost www.kvantmekanik.se || exit 1
 
 # Update cache and install packages
-RUN apk update && apk --no-cache add bind \
-                                     python3
+RUN apk update && apk --no-cache add ${PERMANENT_APPLICATIONS} \
+                                     ${REMOVABLE_APPLICATIONS}
 
 # Get the root hints
 RUN wget -O ${BIND_ROOT_SERVERS} --no-check-certificate https://www.internic.net/domain/named.cache
@@ -50,7 +56,7 @@ VOLUME /var/named/
 # to enable runtime environment variables being read into the application
 # Otherwise we do not need this package for runtime activities
 # Replace_conf might become a standalone binary in the future
-RUN apk del python3 
+RUN apk del ${REMOVABLE_APPLICATIONS} 
 # Document port usage for docker in case you are going to use it as a service
 EXPOSE ${BIND_PORT}/tcp \
        ${BIND_PORT}/udp
