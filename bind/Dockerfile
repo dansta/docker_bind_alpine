@@ -30,9 +30,9 @@ RUN apk update && apk --no-cache add bind \
 RUN wget -O ${BIND_ROOT_SERVERS} --no-check-certificate https://www.internic.net/domain/named.cache
 
 # Change user
-RUN adduser ${BIND_USER} -D -H -s /usr/sbin/nologin
+RUN adduser ${BIND_EFFECTIVE_USER} -D -H -s /usr/sbin/nologin
 # Permissions
-RUN chown -R ${BIND_USER}:${BIND_GROUP} /etc/named/
+RUN chown -R ${BIND_EFFECTIVE_USER}:${BIND_EFFECTIVE_GROUP} /etc/named/
 
 
 ADD files/named.conf ${BIND_CONF} 
