@@ -33,7 +33,7 @@ RUN apk update && apk --no-cache add ${PERMANENT_APPLICATIONS} \
                                      ${REMOVABLE_APPLICATIONS}
 
 # Get the root hints
-RUN wget -O ${BIND_ROOT_SERVERS} --no-check-certificate https://www.internic.net/domain/named.cache
+RUN wget -O ${BIND_ROOT_SERVERS} -v --no-check-certificate https://www.internic.net/domain/named.cache
 
 # Change user
 RUN adduser ${BIND_EFFECTIVE_USER} -D -H -s /usr/sbin/nologin
