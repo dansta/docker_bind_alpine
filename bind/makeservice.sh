@@ -27,6 +27,6 @@ docker service create \
             --mount source=bind,target=/var/log/docker/bind/ \
             --mount source=bind,target=/var/docker/bind/ \
             --name "bind" \
-            --publish published=56,target=56 \
+            --publish published=53,target=53 \
             bind:0.0.100
 

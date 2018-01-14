@@ -14,14 +14,13 @@ ENV WORKDIRS ${WORKDIRS:-/etc/named/ \
                          ${BIND_SOURCEDIR}}
 ARG PERMANENT_APPLICATIONS
 ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind \
-                                                     wget \
                                                      ca-certificates}
 ARG REMOVABLE_APPLICATIONS
 ENV REMOVABLE_APPLICATIONS ${REMOVABLE_APPLICATIONS:-python3}
 ARG BIND_CONF
 ENV BIND_CONF ${BIND_CONF:-/etc/bind/named.conf.recursive}
 ARG BIND_PORT
-ENV BIND_PORT ${BIND_PORT:-56}
+ENV BIND_PORT ${BIND_PORT:-53}
 ARG BIND_ROOT_SERVERS
 ENV BIND_ROOT_SERVERS ${BIND_ROOT_SERVERS:-named.ca}
 ARG BIND_LOCALHOST_ZONE
@@ -31,21 +30,22 @@ ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-pri/127.zone}
 ARG BIND_LOCAL_NETS
 ENV BIND_LOCAL_NETS ${BIND_LOCAL_NETS:-10.0.0.0/8;172.16.0.0/12;192.168.0.0/16;}
 ARG BIND_EFFECTIVE_USER
-ENV BIND_EFFECTIVE_USER ${BIND_EFFECTIVE_USER:-namid}
+ENV BIND_EFFECTIVE_USER ${BIND_EFFECTIVE_USER:-named}
 ARG BIND_EFFECTIVE_GROUP
-ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-namid}
+ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 
 # Healthcheck is not working, disabling for now
 #HEALTHCHECK --interval=10s --timeout=3s CMD dig @localhost www.kvantmekanik.se || exit 1
 
+# Create confdirs
+RUN mkdir -p ${WORKDIRS}
+
 # Update cache and install packages
 RUN apk update && apk --no-cache add ${PERMANENT_APPLICATIONS} \
                                      ${REMOVABLE_APPLICATIONS}
-# Create confdir
-RUN mkdir -p ${WORKDIRS}
 
 # Change user
-RUN adduser ${BIND_EFFECTIVE_USER} -D -H -s /usr/sbin/nologin
+#RUN adduser ${BIND_EFFECTIVE_USER} -D -H -s /usr/sbin/nologin
 
 ADD files/named.conf ${BIND_CONF} 
 ADD files/wrapper.sh /usr/bin/wrapper.sh
@@ -67,6 +67,10 @@ VOLUME /var/log/named/ \
        /var/named/ \
        /var/bind/
 
+RUN cp /var/bind/pri/* /var/named/ && \
+    mv /var/named/127.zone /var/named/0.0.127.in-addr.arpa && \
+    mv /var/named/localhost.zone /var/named/master.localhost
+
 # Remove this line if you want to be able to rerun replace_conf
 # to enable runtime environment variables being read into the application
 # Otherwise we do not need this package for runtime activities
@@ -76,10 +80,6 @@ RUN apk del ${REMOVABLE_APPLICATIONS}
 EXPOSE ${BIND_PORT}/tcp \
        ${BIND_PORT}/udp
 
-
-RUN cp /var/bind/pri/* /var/named/ && \
-    mv /var/named/127.zone /var/named/0.0.127.in-addr.arpa && \
-    mv /var/named/localhost.zone /var/named/master.localhost
 
 # Test squid for build
 CMD /usr/bin/wrapper.sh
