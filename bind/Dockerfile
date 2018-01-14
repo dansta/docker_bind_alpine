@@ -5,7 +5,7 @@ LABEL maintainer=dansta
 ARG WORKDIRS
 ENV WORKDIRS ${WORKDIRS:-/etc/named/ \
                          /var/log/named/ \
-                         /var/named/} 
+                         /var/bind/} 
 ARG PERMANENT_APPLICATIONS
 ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind \
                                                      wget \
@@ -17,11 +17,11 @@ ENV BIND_CONF ${BIND_CONF:-/etc/named/named.conf}
 ARG BIND_PORT
 ENV BIND_PORT ${BIND_PORT:-56}
 ARG BIND_ROOT_SERVERS
-ENV BIND_ROOT_SERVERS ${BIND_ROOT_SERVERS:-/var/named/root.servers}
+ENV BIND_ROOT_SERVERS ${BIND_ROOT_SERVERS:-/var/bind/named.ca}
 ARG BIND_LOCALHOST_ZONE_
-ENV BIND_LOCALHOST_ZONE ${BIND_LOCALHOST_ZONE:-/var/named/master.localhost}
+ENV BIND_LOCALHOST_ZONE ${BIND_LOCALHOST_ZONE:-/var/bind/pri/localhost.zone}
 ARG BIND_LOCALHOST_127
-ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-/var/named/0.0.127.in-addr.arpa}
+ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-/var/bind/pri/127.zone}
 ARG BIND_LOCAL_NETS
 ENV BIND_LOCAL_NETS ${BIND_LOCAL_NETS:-10.0.0.0/8;172.16.0.0/12;192.168.0.0/16;}
 ARG BIND_EFFECTIVE_USER
@@ -58,7 +58,7 @@ RUN chmod -R go-rw /var/log/named
 # Mount volumes to keep store and logs away from the thin layer overlay
 # This is important for performance and memory footprint
 VOLUME /var/log/named/ \
-       /var/named/
+       /var/bind/
 
 # Remove this line if you want to be able to rerun replace_conf
 # to enable runtime environment variables being read into the application
