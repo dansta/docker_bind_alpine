@@ -5,7 +5,8 @@ LABEL maintainer=dansta
 ARG WORKDIRS
 ENV WORKDIRS ${WORKDIRS:-/etc/named/ \
                          /var/log/named/ \
-                         /var/bind/} 
+                         /var/bind/ \
+                         /var/named/}
 ARG PERMANENT_APPLICATIONS
 ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind \
                                                      wget \
@@ -58,6 +59,7 @@ RUN chmod -R go-rw /var/log/named
 # Mount volumes to keep store and logs away from the thin layer overlay
 # This is important for performance and memory footprint
 VOLUME /var/log/named/ \
+       /var/named/ \
        /var/bind/
 
 # Remove this line if you want to be able to rerun replace_conf
