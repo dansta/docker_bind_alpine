@@ -2,11 +2,16 @@ FROM gliderlabs/alpine:latest
 
 LABEL maintainer=dansta
 
+ARG BIND_COMPILEDDIR
+ENV BIND_COMPILEDDIR ${BIND_COMPILEDDIR:-/var/named}
+ARG BIND_SOURCEDIR
+ENV BIND_SOURCEDIR ${BIND_SOURCEDIR:-/var/bind}
 ARG WORKDIRS
 ENV WORKDIRS ${WORKDIRS:-/etc/named/ \
                          /var/log/named/ \
                          /var/bind/ \
-                         /var/named/}
+                         ${BIND_COMPILEDDIR} \
+                         ${BIND_SOURCEDIR}}
 ARG PERMANENT_APPLICATIONS
 ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind \
                                                      wget \
@@ -14,15 +19,15 @@ ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind \
 ARG REMOVABLE_APPLICATIONS
 ENV REMOVABLE_APPLICATIONS ${REMOVABLE_APPLICATIONS:-python3}
 ARG BIND_CONF
-ENV BIND_CONF ${BIND_CONF:-/etc/named/named.conf}
+ENV BIND_CONF ${BIND_CONF:-/etc/bind/named.conf.recursive}
 ARG BIND_PORT
 ENV BIND_PORT ${BIND_PORT:-56}
 ARG BIND_ROOT_SERVERS
-ENV BIND_ROOT_SERVERS ${BIND_ROOT_SERVERS:-/var/bind/named.ca}
-ARG BIND_LOCALHOST_ZONE_
-ENV BIND_LOCALHOST_ZONE ${BIND_LOCALHOST_ZONE:-/var/bind/pri/localhost.zone}
+ENV BIND_ROOT_SERVERS ${BIND_ROOT_SERVERS:-named.ca}
+ARG BIND_LOCALHOST_ZONE
+ENV BIND_LOCALHOST_ZONE ${BIND_LOCALHOST_ZONE:-pri/localhost.zone}
 ARG BIND_LOCALHOST_127
-ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-/var/bind/pri/127.zone}
+ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-pri/127.zone}
 ARG BIND_LOCAL_NETS
 ENV BIND_LOCAL_NETS ${BIND_LOCAL_NETS:-10.0.0.0/8;172.16.0.0/12;192.168.0.0/16;}
 ARG BIND_EFFECTIVE_USER
@@ -70,6 +75,11 @@ RUN apk del ${REMOVABLE_APPLICATIONS}
 # Document port usage for docker in case you are going to use it as a service
 EXPOSE ${BIND_PORT}/tcp \
        ${BIND_PORT}/udp
+
+
+RUN cp /var/bind/pri/* /var/named/ && \
+    mv /var/named/127.zone /var/named/0.0.127.in-addr.arpa && \
+    mv /var/named/localhost.zone /var/named/master.localhost
 
 # Test squid for build
 CMD /usr/bin/wrapper.sh
