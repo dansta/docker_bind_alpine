@@ -16,12 +16,15 @@ ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 # Healthcheck is not working, disabling for now
 #HEALTHCHECK --interval=10s --timeout=3s CMD dig @localhost www.kvantmekanik.se || exit 1
 
-# Update cache
-RUN apk update
+# Update cache and install packages
+RUN apk update && apk --no-cache add bind \
+                                     python3
 
-# Update and install packages
-RUN apk --no-cache add bind
-RUN apk --no-cache add python3
+# Change user
+RUN adduser ${BIND_USER} -D -H -s /usr/sbin/nologin
+# Permissions
+RUN chown -R ${BIND_USER}:${BIND_GROUP} /etc/named/
+
 
 ADD files/named.conf ${BIND_CONF} 
 ADD files/replace.py /usr/local/bin/replace_conf
@@ -44,4 +47,4 @@ EXPOSE ${BIND_PORT}/tcp \
        ${BIND_PORT}/udp
 
 # Test squid for build
-CMD named
+CMD named -n 4 -p ${BIND_PORT} -u ${BIND_EFFECTIVE_USER}
