@@ -2,12 +2,16 @@ FROM gliderlabs/alpine:latest
 
 LABEL maintainer=dansta
 
+ARG WORKDIRS
+ENV WORKDIRS ${WORKDIRS:-/etc/named/ \
+                         /var/log/named/ \
+                         /var/named/} 
 ARG PERMANENT_APPLICATIONS
-ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind}
+ENV PERMANENT_APPLICATIONS ${PERMANENT_APPLICATIONS:-bind \
+                                                     wget \
+                                                     ca-certificates}
 ARG REMOVABLE_APPLICATIONS
-ENV REMOVABLE_APPLICATIONS ${REMOVABLE_APPLICATIONS:-python3 \
-                                             wget \
-                                             ca-certificates}
+ENV REMOVABLE_APPLICATIONS ${REMOVABLE_APPLICATIONS:-python3}
 ARG BIND_CONF
 ENV BIND_CONF ${BIND_CONF:-/etc/named/named.conf}
 ARG BIND_PORT
@@ -21,9 +25,9 @@ ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-/var/named/0.0.127.in-addr.arpa}
 ARG BIND_LOCAL_NETS
 ENV BIND_LOCAL_NETS ${BIND_LOCAL_NETS:-10.0.0.0/8;172.16.0.0/12;192.168.0.0/16;}
 ARG BIND_EFFECTIVE_USER
-ENV BIND_EFFECTIVE_USER ${BIND_EFFECTIVE_USER:-named}
+ENV BIND_EFFECTIVE_USER ${BIND_EFFECTIVE_USER:-namid}
 ARG BIND_EFFECTIVE_GROUP
-ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
+ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-namid}
 
 # Healthcheck is not working, disabling for now
 #HEALTHCHECK --interval=10s --timeout=3s CMD dig @localhost www.kvantmekanik.se || exit 1
@@ -31,26 +35,30 @@ ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 # Update cache and install packages
 RUN apk update && apk --no-cache add ${PERMANENT_APPLICATIONS} \
                                      ${REMOVABLE_APPLICATIONS}
-
-# Get the root hints
-RUN wget -O ${BIND_ROOT_SERVERS} -v --no-check-certificate https://www.internic.net/domain/named.cache
+# Create confdir
+RUN mkdir -p ${WORKDIRS}
 
 # Change user
 RUN adduser ${BIND_EFFECTIVE_USER} -D -H -s /usr/sbin/nologin
-# Permissions
-RUN chown -R ${BIND_EFFECTIVE_USER}:${BIND_EFFECTIVE_GROUP} /etc/named/
-
 
 ADD files/named.conf ${BIND_CONF} 
+ADD files/wrapper.sh /usr/bin/wrapper.sh
 ADD files/replace.py /usr/local/bin/replace_conf
-RUN chmod +rx /usr/local/bin/replace_conf
+RUN chmod +rx /usr/local/bin/replace_conf /usr/bin/wrapper.sh
 RUN /usr/local/bin/replace_conf ${BIND_CONF} BIND
+RUN /usr/local/bin/replace_conf /usr/bin/wrapper.sh BIND
 RUN rm -f /usr/local/bin/replace_conf
+
+
+# Permissions
+RUN chown -R ${BIND_EFFECTIVE_USER}:${BIND_EFFECTIVE_GROUP} ${WORKDIRS}
+# This one requires special treatment
+RUN chmod -R go-rw /var/log/named
 
 # Mount volumes to keep store and logs away from the thin layer overlay
 # This is important for performance and memory footprint
-VOLUME /var/log/named/
-VOLUME /var/named/
+VOLUME /var/log/named/ \
+       /var/named/
 
 # Remove this line if you want to be able to rerun replace_conf
 # to enable runtime environment variables being read into the application
@@ -62,4 +70,4 @@ EXPOSE ${BIND_PORT}/tcp \
        ${BIND_PORT}/udp
 
 # Test squid for build
-CMD named -n 4 -p ${BIND_PORT} -u ${BIND_EFFECTIVE_USER}
+CMD /usr/bin/wrapper.sh
