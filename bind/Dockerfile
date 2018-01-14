@@ -6,6 +6,12 @@ ARG BIND_CONF
 ENV BIND_CONF ${BIND_CONF:-/etc/named/named.conf}
 ARG BIND_PORT
 ENV BIND_PORT ${BIND_PORT:-56}
+ARG BIND_ROOT_SERVERS
+ENV BIND_ROOT_SERVERS ${BIND_ROOT_SERVERS:-/var/named/root.servers}
+ARG BIND_LOCALHOST_ZONE_
+ENV BIND_LOCALHOST_ZONE ${BIND_LOCALHOST_ZONE:-/var/named/master.localhost}
+ARG BIND_LOCALHOST_127
+ENV BIND_LOCALHOST_127 ${BIND_LOCALHOST_127:-/var/named/0.0.127.in-addr.arpa}
 ARG BIND_LOCAL_NETS
 ENV BIND_LOCAL_NETS ${BIND_LOCAL_NETS:-10.0.0.0/8;172.16.0.0/12;192.168.0.0/16;}
 ARG BIND_EFFECTIVE_USER
@@ -19,6 +25,9 @@ ENV BIND_EFFECTIVE_GROUP ${BIND_EFFECTIVE_GROUP:-named}
 # Update cache and install packages
 RUN apk update && apk --no-cache add bind \
                                      python3
+
+# Get the root hints
+RUN wget -O ${BIND_ROOT_SERVERS} --no-check-certificate https://www.internic.net/domain/named.cache
 
 # Change user
 RUN adduser ${BIND_USER} -D -H -s /usr/sbin/nologin
@@ -41,7 +50,7 @@ VOLUME /var/named/
 # to enable runtime environment variables being read into the application
 # Otherwise we do not need this package for runtime activities
 # Replace_conf might become a standalone binary in the future
-RUN apk del python3
+RUN apk del python3 
 # Document port usage for docker in case you are going to use it as a service
 EXPOSE ${BIND_PORT}/tcp \
        ${BIND_PORT}/udp
